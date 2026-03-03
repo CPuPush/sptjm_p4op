@@ -1,2 +1,2 @@
 npm install
-npn run start-dev
+npm run start-dev
