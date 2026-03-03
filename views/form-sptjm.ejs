@@ -1,0 +1,203 @@
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-plus"></i> Input Transaksi SPTJM Baru</h5>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <div class="mb-4 p-3 bg-light rounded border">
+                        <label class="form-label fw-bold text-primary small text-uppercase">Langkah 1: Identifikasi Sekolah</label>
+                        <div class="input-group">
+                            <input type="text" id="searchNpsn" class="form-control" placeholder="Masukkan NPSN (Contoh: 20100104)...">
+                            <button class="btn btn-primary px-4" type="button" id="btnSearch">
+                                <i class="bi bi-search"></i> Cari
+                            </button>
+                        </div>
+                        <div id="searchFeedback" class="form-text mt-2"></div>
+                    </div>
+
+                    <form id="formCreateSptjm" class="d-none">
+                        <label class="form-label fw-bold text-primary small text-uppercase">Langkah 2: Detail Berkas & Nominal</label>
+                        
+                        <input type="hidden" name="AlokasiBantuanId" id="AlokasiBantuanId">
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label small">Nama Sekolah</label>
+                                <input type="text" id="displayNamaSekolah" class="form-control bg-light" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Jenjang</label>
+                                <select id="selectJenjang" class="form-select border-primary" required></select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small">Tanggal Terima Berkas</label>
+                                <input type="date" name="tgl_terima" class="form-control" value="<%= currentDate %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Nomor Surat</label>
+                                <input type="text" name="no_surat" id="no_surat" class="form-control" required placeholder="Contoh: 123/SPTJM/2026">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small">Nama Penanggung Jawab / Operator</label>
+                            <input type="text" name="nama" id="nama" class="form-control" required placeholder="Masukkan nama lengkap petugas...">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small">Jumlah Siswa</label>
+                                <input type="number" name="jmlh_siswa" id="jmlh_siswa" class="form-control" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Nominal SPP (Rp)</label>
+                                <input type="number" name="spp" id="spp" class="form-control" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">Durasi (Bulan)</label>
+                                <select name="bulan" id="bulan" class="form-select">
+                                    <option value="1">1 Bulan</option>
+                                    <option value="3" selected>3 Bulan</option>
+                                    <option value="6">6 Bulan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small">Nomor Telepon Operator</label>
+                            <input type="text" name="no_telp" id="no_telp" class="form-control" placeholder="08xxxxxx">
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" name="is_ppdb_bersama" id="is_ppdb_bersama" value="true">
+                            <label class="form-check-label" for="is_ppdb_bersama">Berkas PPDB Bersama?</label>
+                        </div>
+
+                        <div class="alert alert-info py-2 d-flex justify-content-between align-items-center">
+                            <span class="small fw-bold text-uppercase">Estimasi Total Pendebetan:</span>
+                            <span class="h5 mb-0 fw-bold text-dark" id="previewTotal">Rp 0</span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success fw-bold py-2 shadow-sm">
+                                <i class="bi bi-cloud-arrow-up"></i> SIMPAN TRANSAKSI
+                            </button>
+                            <a href="/dashboard" class="btn btn-link text-muted">Batal</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const btnSearch = document.getElementById('btnSearch');
+    const form = document.getElementById('formCreateSptjm');
+    const previewTotal = document.getElementById('previewTotal');
+
+    btnSearch.onclick = async () => {
+        const npsn = document.getElementById('searchNpsn').value;
+        const feedback = document.getElementById('searchFeedback');
+
+        if (!npsn) return alert("Masukkan NPSN terlebih dahulu.");
+
+        try {
+            const res = await fetch(`/sptjm/school/${npsn}`); 
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                const schools = result.data;
+                const school = schools[0];
+
+                form.classList.remove('d-none');
+                document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
+
+                const selectJenjang = document.getElementById('selectJenjang');
+                selectJenjang.innerHTML = '';
+                schools.forEach(s => {
+                    s.AlokasiBantuans.forEach(alokasi => {
+                        const opt = document.createElement('option');
+                        opt.value = alokasi.id;
+                        opt.textContent = `${s.jenjang} (Tahap ${alokasi.tahap} - ${alokasi.tahun})`;
+                        selectJenjang.appendChild(opt);
+                    });
+                });
+                
+                document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
+
+                // LOGIKA MEMORY FORM: Prefill nama dan data lainnya
+                const lastTrxRes = await fetch(`/sptjm/last-trx/${school.id}`);
+                const lastTrxData = await lastTrxRes.json();
+                
+                if (lastTrxData.data) {
+                    const last = lastTrxData.data;
+                    document.getElementById('nama').value = last.nama || ''; // Auto-fill nama penanggung jawab
+                    document.getElementById('no_telp').value = last.no_telp || '';
+                    document.getElementById('spp').value = last.spp || '';
+                    document.getElementById('jmlh_siswa').value = last.jmlh_siswa || '';
+                    document.getElementById('no_surat').value = last.no_surat || '';
+                    feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Sekolah ditemukan. Data terakhir otomatis terisi.</span>`;
+                    calculateTotal();
+                }
+
+            } else {
+                alert("NPSN tidak terdaftar di Master Sekolah.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Terjadi kesalahan sistem saat mencari sekolah.");
+        }
+    };
+
+    document.getElementById('selectJenjang').onchange = (e) => {
+        document.getElementById('AlokasiBantuanId').value = e.target.value;
+    };
+
+    const calculateTotal = () => {
+        const s = document.getElementById('jmlh_siswa').value || 0;
+        const p = document.getElementById('spp').value || 0;
+        const b = document.getElementById('bulan').value || 0;
+        const total = s * p * b;
+        previewTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    };
+
+    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
+        document.getElementById(id).oninput = calculateTotal;
+    });
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        data.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
+
+        try {
+            const res = await fetch('/sptjm/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (result.status === 'success') {
+                alert("Berhasil! Transaksi telah disimpan.");
+                window.location.href = '/dashboard';
+            } else {
+                alert("Gagal menyimpan: " + (result.message || "Terjadi kesalahan"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Terjadi kesalahan jaringan.");
+        }
+    };
+</script>

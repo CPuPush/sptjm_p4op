@@ -1,0 +1,172 @@
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Rekapitulasi SPTJM Hari Ini</h2>
+            <p class="text-muted small">Monitoring data masuk dan nominal pendebetan berkas sekolah.</p>
+        </div>
+        <a href="/sptjm/add" class="btn btn-warning fw-bold px-4 shadow-sm">+ Input Data Baru</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">No</th>
+                            <th>Sekolah & NPSN</th>
+                            <th>No. Surat</th>
+                            <th>Tgl Terima</th>
+                            <th>Rincian (Siswa/SPP/Bln)</th>
+                            <th>Total Dana</th>
+                            <th>Petugas</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (data && data.length > 0) { %>
+                            <% data.forEach((item) => { %>
+                                <tr>
+                                    <td class="ps-3 text-center"><strong><%= item.no_urut_harian %></strong></td>
+                                    
+                                    <td>
+                                        <div class="fw-bold text-primary text-uppercase"><%= item.AlokasiBantuan?.MasterSekolah?.nama_sekolah %></div>
+                                        <div class="small text-muted">
+                                            NPSN: <%= item.AlokasiBantuan?.MasterSekolah?.npsn %> | 
+                                            Jenjang: <span class="badge bg-light text-dark border"><%= item.AlokasiBantuan?.MasterSekolah?.jenjang %></span>
+                                        </div>
+                                    </td>
+
+                                    <td><code class="text-dark"><%= item.no_surat %></code></td>
+                                    
+                                    <td class="small">
+                                        <%= new Date(item.tgl_terima).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                    </td>
+
+                                    <td class="small">
+                                        <i class="bi bi-people"></i> <%= item.jmlh_siswa %> Siswa<br>
+                                        <i class="bi bi-cash"></i> Rp <%= parseInt(item.spp).toLocaleString('id-ID') %> / <%= item.bulan %> Bln
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold text-success">
+                                            Rp <%= parseInt(item.total).toLocaleString('id-ID') %>
+                                        </span>
+                                        <% if(item.is_ppdb_bersama) { %>
+                                            <div class="badge bg-info text-dark" style="font-size: 0.65rem;">PPDB Bersama</div>
+                                        <% } %>
+                                    </td>
+
+                                    <td class="small">
+                                        <i class="bi bi-person-circle"></i> <%= item.User?.username %>
+                                    </td>
+
+                                    <td>
+                                        <% if(item.status_ambil) { %>
+                                            <span class="badge bg-success rounded-pill px-3">Selesai</span>
+                                        <% } else { %>
+                                            <span class="badge bg-warning text-dark rounded-pill px-3">Diproses</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Belum ada data masuk untuk hari ini.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Rekapitulasi SPTJM Hari Ini</h2>
+            <p class="text-muted small">Monitoring data masuk dan nominal pendebetan berkas sekolah.</p>
+        </div>
+        <a href="/sptjm/add" class="btn btn-warning fw-bold px-4 shadow-sm">+ Input Data Baru</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">No</th>
+                            <th>Sekolah & NPSN</th>
+                            <th>No. Surat</th>
+                            <th>Tgl Terima</th>
+                            <th>Rincian (Siswa/SPP/Bln)</th>
+                            <th>Total Dana</th>
+                            <th>Petugas</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (data && data.length > 0) { %>
+                            <% data.forEach((item) => { %>
+                                <tr>
+                                    <td class="ps-3 text-center"><strong><%= item.no_urut_harian %></strong></td>
+                                    
+                                    <td>
+                                        <div class="fw-bold text-primary text-uppercase"><%= item.AlokasiBantuan?.MasterSekolah?.nama_sekolah %></div>
+                                        <div class="small text-muted">
+                                            NPSN: <%= item.AlokasiBantuan?.MasterSekolah?.npsn %> | 
+                                            Jenjang: <span class="badge bg-light text-dark border"><%= item.AlokasiBantuan?.MasterSekolah?.jenjang %></span>
+                                        </div>
+                                    </td>
+
+                                    <td><code class="text-dark"><%= item.no_surat %></code></td>
+                                    
+                                    <td class="small">
+                                        <%= new Date(item.tgl_terima).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                    </td>
+
+                                    <td class="small">
+                                        <i class="bi bi-people"></i> <%= item.jmlh_siswa %> Siswa<br>
+                                        <i class="bi bi-cash"></i> Rp <%= parseInt(item.spp).toLocaleString('id-ID') %> / <%= item.bulan %> Bln
+                                    </td>
+
+                                    <td>
+                                        <span class="fw-bold text-success">
+                                            Rp <%= parseInt(item.total).toLocaleString('id-ID') %>
+                                        </span>
+                                        <% if(item.is_ppdb_bersama) { %>
+                                            <div class="badge bg-info text-dark" style="font-size: 0.65rem;">PPDB Bersama</div>
+                                        <% } %>
+                                    </td>
+
+                                    <td class="small">
+                                        <i class="bi bi-person-circle"></i> <%= item.User?.username %>
+                                    </td>
+
+                                    <td>
+                                        <% if(item.status_ambil) { %>
+                                            <span class="badge bg-success rounded-pill px-3">Selesai</span>
+                                        <% } else { %>
+                                            <span class="badge bg-warning text-dark rounded-pill px-3">Diproses</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Belum ada data masuk untuk hari ini.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

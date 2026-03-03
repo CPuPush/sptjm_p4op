@@ -1,0 +1,203 @@
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Rekapitulasi SPTJM</h2>
+            <p class="text-muted small">Monitoring data masuk dan nominal pendebetan berkas sekolah.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="exportExcel()" class="btn btn-outline-success fw-bold px-4 shadow-sm">
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+            <a href="/sptjm/add" class="btn btn-warning fw-bold px-4 shadow-sm">+ Input Data Baru</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form action="/dashboard" method="GET" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Tanggal Awal</label>
+                    <input type="date" name="startDate" id="startDate" class="form-control" value="<%= startDate %>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Tanggal Akhir</label>
+                    <input type="date" name="endDate" id="endDate" class="form-control" value="<%= endDate %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">Cari Nama Sekolah</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" id="searchQ" class="form-control" placeholder="Ketik nama sekolah..." value="<%= currentSearch %>">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <i class="bi bi-filter"></i> Terapkan Filter
+                    </button>
+                    <% if (startDate || endDate || currentSearch) { %>
+                        <a href="/dashboard" class="btn btn-outline-secondary px-3">
+                            <i class="bi bi-x-circle"></i> Reset
+                        </a>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3 text-center">No</th>
+                            <th>Sekolah & NPSN</th>
+                            <th>Nama</th>
+                            <th>No. Surat</th>
+                            <th>Tgl Terima</th>
+                            <th>Rincian (Siswa/SPP/Bln)</th>
+                            <th>Total Dana</th>
+                            <th>Petugas</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Edit | Hapus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (data && data.length > 0) { %>
+                            <% data.forEach((item) => { %>
+                                <tr>
+                                    <td class="ps-3 text-center"><strong><%= item.no_urut_harian %></strong></td>
+                                    <td>
+                                        <a href="/sptjm/<%= item.id %>" class="fw-bold text-primary text-decoration-none text-uppercase">
+                                            <%= item.AlokasiBantuan?.MasterSekolah?.nama_sekolah %>
+                                        </a>
+                                        <div class="small text-muted">
+                                            NPSN: <%= item.AlokasiBantuan?.MasterSekolah?.npsn %> | 
+                                            <span class="badge bg-light text-dark border"><%= item.AlokasiBantuan?.MasterSekolah?.jenjang %></span>
+                                            <span class="badge bg-info text-dark border">Tahap <%= item.AlokasiBantuan?.tahap %></span>
+                                        </div>
+                                    </td>
+                                    <td><code class="text-dark text-uppercase"><%= item.nama %></code></td>
+                                    <td><code class="text-dark text-uppercase"><%= item.no_surat %></code></td>
+                                    <td class="small">
+                                        <%= new Date(item.tgl_terima).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                    </td>
+                                    <td class="small">
+                                        <i class="bi bi-people"></i> <%= item.jmlh_siswa %> Siswa<br>
+                                        <i class="bi bi-cash"></i> Rp <%= parseInt(item.spp).toLocaleString('id-ID') %> / <%= item.bulan %> Bln
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">
+                                            Rp <%= parseInt(item.total).toLocaleString('id-ID') %>
+                                        </span>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <i class="bi bi-person-circle"></i> <%= item.User?.username %>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="form-check form-switch d-flex justify-content-center">
+                                            <input class="form-check-input shadow-none" type="checkbox" role="switch" 
+                                                id="switch-<%= item.id %>" 
+                                                style="cursor: pointer; width: 2.2em; height: 1.1em;"
+                                                <%= item.status_ambil ? 'checked' : '' %>
+                                                onchange="toggleStatus('<%= item.id %>', '<%= item.AlokasiBantuan?.MasterSekolah?.nama_sekolah %>')">
+                                            <label class="form-check-label ms-2 small fw-bold <%= item.status_ambil ? 'text-success' : 'text-warning' %>" for="switch-<%= item.id %>">
+                                                <%= item.status_ambil ? 'Selesai' : 'Proses' %>
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <a href="/sptjm/edit/<%= item.id %>" class="btn btn-sm btn-outline-primary border-0" title="Edit Data">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger border-0" 
+                                                    onclick="deleteTransaction('<%= item.id %>', '<%= item.AlokasiBantuan?.MasterSekolah?.nama_sekolah %>')"
+                                                    title="Hapus Data">
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="10" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Belum ada data ditemukan untuk kriteria ini.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Logika Default Date (Range)
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
+        const today = new Date().toLocaleDateString('en-CA');
+        
+        if (!startInput.value) startInput.value = today;
+        if (!endInput.value) endInput.value = today;
+    });
+
+    // 2. Logika Toggle Status (PATCH)
+    async function toggleStatus(id, namaSekolah) {
+        try {
+            const res = await fetch(`/sptjm/pickup/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                window.location.reload(); 
+            } else {
+                alert("Gagal memperbarui status: " + result.message);
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Terjadi kesalahan koneksi.");
+            window.location.reload();
+        }
+    }
+
+    // 3. Logika Hapus Transaksi (DELETE)
+    async function deleteTransaction(id, namaSekolah) {
+        if (confirm(`Apakah Anda yakin ingin menghapus data SPTJM ${namaSekolah}?`)) {
+            try {
+                const res = await fetch(`/sptjm/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("Data Berhasil Dihapus!");
+                    window.location.reload();
+                } else {
+                    alert("Gagal menghapus data: " + result.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Terjadi kesalahan koneksi.");
+            }
+        }
+    }
+
+    // 4. Export to Excel (Range Tanggal)
+    function exportExcel() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const q = document.getElementById('searchQ').value;
+        
+        console.log(`Mengekspor data: ${startDate} s/d ${endDate}`);
+        
+        // Membawa parameter startDate dan endDate ke Backend
+        window.location.href = `/sptjm/export?startDate=${startDate}&endDate=${endDate}&q=${q}`;
+    }
+</script>

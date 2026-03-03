@@ -1,0 +1,33 @@
+<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark shadow" style="width: 280px; min-height: 100vh;">
+    <a href="/dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <span class="fs-4 fw-bold text-warning">SIPENDI</span>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a href="/dashboard" class="nav-link <%= (currentPage === 'dashboard') ? 'active' : 'text-white' %>">
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="/sptjm/add" class="nav-link <%= (currentPage === 'add') ? 'active' : 'text-white' %>">
+                <i class="bi bi-plus-circle me-2"></i> Input SPTJM
+            </a>
+        </li>
+        <li>
+            <a href="/about" class="nav-link <%= (currentPage === 'about') ? 'active' : 'text-white' %>">
+                <i class="bi bi-info-circle me-2"></i> About
+            </a>
+        </li>
+    </ul>
+    <hr>
+    <div class="dropdown">
+        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle me-2"></i>
+            <strong><%= user.username %></strong>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+            <li><a class="dropdown-item" href="/logout">Keluar</a></li>
+        </ul>
+    </div>
+</div>

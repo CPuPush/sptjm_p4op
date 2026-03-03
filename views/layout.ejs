@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIPENDI - SPTJM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; min-height: 100vh; }
+        .navbar-custom { background-color: #1a237e; border-bottom: 3px solid #f9a825; z-index: 1030; }
+        
+        /* Sidebar Styling */
+        #wrapper { display: flex; width: 100%; align-items: stretch; }
+        #sidebar { 
+            min-width: 250px; 
+            max-width: 250px; 
+            background: #ffffff; 
+            border-right: 1px solid #dee2e6;
+            transition: all 0.3s;
+            min-height: calc(100vh - 56px); /* Tinggi layar minus navbar */
+        }
+        #content { width: 100%; padding: 20px; }
+        .nav-link-custom { 
+            padding: 12px 20px; 
+            display: block; 
+            color: #333; 
+            text-decoration: none; 
+            font-weight: 500;
+        }
+        .nav-link-custom:hover, .nav-link-custom.active { 
+            background-color: #e8eaf6; 
+            color: #1a237e; 
+            border-right: 4px solid #1a237e;
+        }
+    </style>
+</head>
+<body>
+
+    <% if (typeof hideNavbar === 'undefined' || !hideNavbar) { %>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm sticky-top">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand fw-bold" href="/dashboard">
+                    <i class="bi bi-shield-check"></i> SPTJM <small class="fw-light">P4OP</small>
+                </a>
+                <div class="navbar-nav ms-auto flex-row align-items-center">
+                    <span class="nav-link text-white me-3 d-none d-md-block">Halo, <%= typeof userById !== 'undefined' ? userById.username : 'Petugas' %></span>
+                    <a href="/logout" class="btn btn-outline-light btn-sm">Keluar</a>
+                </div>
+            </div>
+        </nav>
+    <% } %>
+
+    <div id="wrapper">
+        <% if (typeof hideNavbar === 'undefined' || !hideNavbar) { %>
+            <nav id="sidebar" class="d-none d-md-block shadow-sm">
+                <div class="pt-4">
+                    <p class="px-4 small fw-bold text-muted text-uppercase mb-2">Menu Utama</p>
+                    <a href="/dashboard" class="nav-link-custom">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                    </a>
+
+                    <a href="/dashboard2" class="nav-link-custom">
+                        <i class="bi bi-speedometer2 me-2"></i> Filter
+                    </a>
+
+                    <a href="/sptjm/add" class="nav-link-custom">
+                        <i class="bi bi-file-earmark-plus me-2"></i> Input SPTJM
+                    </a>
+                    
+                    <p class="px-4 small fw-bold text-muted text-uppercase mt-4 mb-2">Sistem</p>
+                    <a href="/about" class="nav-link-custom">
+                        <i class="bi bi-info-circle me-2"></i> About SPTJM
+                    </a>
+                </div>
+            </nav>
+        <% } %>
+
+        <div id="content">
+            <%- body %>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
