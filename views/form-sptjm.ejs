@@ -116,24 +116,34 @@
             const result = await res.json();
 
             if (result.status === 'success') {
-                const schools = result.data;
-                const school = schools[0];
+const schools = result.data;
+    const school = schools[0];
 
-                form.classList.remove('d-none');
-                document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
+    form.classList.remove('d-none');
+    document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
 
-                const selectJenjang = document.getElementById('selectJenjang');
-                selectJenjang.innerHTML = '';
-                schools.forEach(s => {
-                    s.AlokasiBantuans.forEach(alokasi => {
-                        const opt = document.createElement('option');
-                        opt.value = alokasi.id;
-                        opt.textContent = `${s.jenjang} (Tahap ${alokasi.tahap} - ${alokasi.tahun})`;
-                        selectJenjang.appendChild(opt);
-                    });
-                });
-                
-                document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
+    const selectJenjang = document.getElementById('selectJenjang');
+    selectJenjang.innerHTML = '';
+
+    schools.forEach(s => {
+        // URUTKAN DATA: Tahun Terbesar ke Terkecil, lalu Tahap Terbesar ke Terkecil
+        const sortedAlokasi = s.AlokasiBantuans.sort((a, b) => {
+            if (b.tahun !== a.tahun) {
+                return b.tahun - a.tahun; // Urutkan Tahun Descending (2025 -> 2023)
+            }
+            return b.tahap - a.tahap; // Urutkan Tahap Descending (Tahap 2 -> Tahap 1)
+        });
+
+        sortedAlokasi.forEach(alokasi => {
+            const opt = document.createElement('option');
+            opt.value = alokasi.id;
+            opt.textContent = `${s.jenjang} (Tahap ${alokasi.tahap} - ${alokasi.tahun})`;
+            selectJenjang.appendChild(opt);
+        });
+    });
+    
+    // Set default value ke pilihan pertama (yang sekarang adalah tahun terbaru)
+    document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
 
                 // LOGIKA MEMORY FORM: Prefill nama dan data lainnya
                 const lastTrxRes = await fetch(`/sptjm/last-trx/${school.id}`);

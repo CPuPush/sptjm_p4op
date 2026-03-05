@@ -17,5 +17,9 @@
  * => npx sequelize-cli db:migrate:undo:all
  * berguna untuk jika buat perubahan di struktur database.
  * 
+ * * migrate send
+ * => npx sequelize-cli db:seed:all
+ * 
+ * 22.17.0
  * 
  */
