@@ -25,7 +25,7 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 server.listen(port, () => {
-  console.log(`\n=== SIPENDI SERVER ACTIVE ===`);
+  console.log(`\n=== SPTJM P4OP SERVER ACTIVE ===`);
   console.log(`==============================\n`);
 });
 server.on('error', onError);
