@@ -76,6 +76,10 @@
                                             <span class="badge bg-light text-dark border"><%= item.AlokasiBantuan?.MasterSekolah?.jenjang %></span>
                                             <span class="badge bg-info text-dark border">Tahap <%= item.AlokasiBantuan?.tahap %></span>
                                             <span class="badge bg-info text-dark border"><%= item.AlokasiBantuan?.tahun %></span>
+                                            
+                                            <% if (item.is_ppdb_bersama) { %>
+                                                <span class="badge bg-warning text-dark border"><i class="bi bi-people-fill"></i> PPDB BERSAMA</span>
+                                            <% } %>
                                         </div>
                                     </td>
                                     <td><code class="text-dark text-uppercase"><%= item.nama %></code></td>
