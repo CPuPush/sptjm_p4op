@@ -1,61 +1,109 @@
 <div class="container mt-4 mb-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Edit Transaksi SPTJM</h5>
-        </div>
-        <div class="card-body p-4">
-            <form id="formEditSptjm">
-                <div class="mb-4 p-3 bg-light rounded border">
-                    <label class="form-label fw-bold text-muted small text-uppercase">Sekolah</label>
-                    <h5 class="fw-bold mb-0 text-dark"><%= data.AlokasiBantuan?.MasterSekolah?.nama_sekolah %></h5>
-                    <small class="text-muted">Tahap <%= data.AlokasiBantuan?.tahap %> - <%= data.AlokasiBantuan?.tahun %></small>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square"></i> Edit Transaksi SPTJM</h5>
                 </div>
+                <div class="card-body p-4">
+                    <form id="formEditSptjm">
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Informasi Sekolah</label>
+                            <h5 class="fw-bold mb-0 text-dark"><%= data.AlokasiBantuan?.MasterSekolah?.nama_sekolah %></h5>
+                            <div class="d-flex gap-2 mt-1">
+                                <span class="badge bg-info text-dark">Tahap <%= data.AlokasiBantuan?.tahap %></span>
+                                <span class="badge bg-info text-dark">Tahun <%= data.AlokasiBantuan?.tahun %></span>
+                                <span class="badge bg-secondary"><%= data.AlokasiBantuan?.MasterSekolah?.jenjang %></span>
+                            </div>
+                        </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label small">Nomor Surat</label>
-                        <input type="text" name="no_surat" class="form-control" value="<%= data.no_surat %>" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small">Nama Penanggung Jawab</label>
-                        <input type="text" name="nama" class="form-control" value="<%= data.nama %>" required>
-                    </div>
-                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Nomor Surat</label>
+                                <input type="text" name="no_surat" class="form-control" value="<%= data.no_surat %>" required placeholder="Contoh: 123/SPTJM/2026">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Nama Penanggung Jawab</label>
+                                <input type="text" name="nama" class="form-control" value="<%= data.nama %>" required placeholder="Masukkan nama lengkap...">
+                            </div>
+                        </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label small">Jumlah Siswa</label>
-                        <input type="number" name="jmlh_siswa" id="jmlh_siswa" class="form-control" value="<%= data.jmlh_siswa %>" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small">SPP (Rp)</label>
-                        <input type="number" name="spp" id="spp" class="form-control" value="<%= data.spp %>" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small">Bulan</label>
-                        <select name="bulan" id="bulan" class="form-select">
-                            <option value="1" <%= data.bulan == 1 ? 'selected' : '' %>>1 Bulan</option>
-                            <option value="3" <%= data.bulan == 3 ? 'selected' : '' %>>3 Bulan</option>
-                            <option value="6" <%= data.bulan == 6 ? 'selected' : '' %>>6 Bulan</option>
-                        </select>
-                    </div>
-                </div>
+                        <hr class="my-4">
 
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary fw-bold py-2">SIMPAN PERUBAHAN</button>
-                    <a href="/dashboard" class="btn btn-link text-muted text-decoration-none">Kembali</a>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Jumlah Siswa</label>
+                                <input type="number" name="jmlh_siswa" id="jmlh_siswa" class="form-control" value="<%= data.jmlh_siswa %>" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">SPP (Rp)</label>
+                                <input type="number" name="spp" id="spp" class="form-control" value="<%= data.spp %>" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Durasi (Bulan)</label>
+                                <select name="bulan" id="bulan" class="form-select">
+                                    <option value="1" <%= data.bulan == 1 ? 'selected' : '' %>>1 Bulan</option>
+                                    <option value="3" <%= data.bulan == 3 ? 'selected' : '' %>>3 Bulan</option>
+                                    <option value="6" <%= data.bulan == 6 ? 'selected' : '' %>>6 Bulan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" name="is_ppdb_bersama" id="is_ppdb_bersama" 
+                                <%= data.is_ppdb_bersama ? 'checked' : '' %> style="cursor: pointer;">
+                            <label class="form-check-label fw-bold text-dark" for="is_ppdb_bersama">Berkas PPDB Bersama?</label>
+                            <div class="form-text small text-muted">Aktifkan jika berkas ini adalah jalur PPDB Bersama.</div>
+                        </div>
+
+                        <div class="alert alert-info py-2 d-flex justify-content-between align-items-center">
+                            <span class="small fw-bold text-uppercase">Estimasi Total Dana:</span>
+                            <span class="h5 mb-0 fw-bold text-dark" id="previewTotal">Rp 0</span>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary fw-bold py-2 shadow-sm">
+                                <i class="bi bi-cloud-arrow-up"></i> SIMPAN PERUBAHAN
+                            </button>
+                            <a href="/dashboard" class="btn btn-link text-muted text-decoration-none">Batal dan Kembali</a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
     const form = document.getElementById('formEditSptjm');
+    const previewTotal = document.getElementById('previewTotal');
+
+    // Fungsi Hitung Total Otomatis
+    const calculateTotal = () => {
+        const s = document.getElementById('jmlh_siswa').value || 0;
+        const p = document.getElementById('spp').value || 0;
+        const b = document.getElementById('bulan').value || 0;
+        const total = s * p * b;
+        previewTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    };
+
+    // Jalankan kalkulasi saat halaman pertama kali dibuka
+    window.onload = calculateTotal;
+
+    // Jalankan kalkulasi setiap kali input berubah
+    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
+        document.getElementById(id).oninput = calculateTotal;
+    });
+
+    // Handle Submit Form
     form.onsubmit = async (e) => {
         e.preventDefault();
+        
         const formData = new FormData(form);
         const body = Object.fromEntries(formData.entries());
+
+        // Pastikan nilai boolean is_ppdb_bersama terambil dengan benar
+        body.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
 
         try {
             const res = await fetch(`/sptjm/<%= data.id %>`, {
@@ -63,15 +111,18 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
+            
             const result = await res.json();
+            
             if (result.status === 'success') {
-                alert("Data berhasil diperbarui!");
+                alert("Berhasil! Perubahan data SPTJM telah disimpan.");
                 window.location.href = '/dashboard';
             } else {
-                alert("Gagal: " + result.message);
+                alert("Gagal memperbarui data: " + (result.message || "Terjadi kesalahan internal"));
             }
         } catch (err) {
-            alert("Terjadi kesalahan koneksi.");
+            console.error(err);
+            alert("Terjadi kesalahan koneksi ke server.");
         }
     };
 </script>
