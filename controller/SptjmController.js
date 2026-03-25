@@ -236,28 +236,39 @@ static async renderDashboard2(req, res) {
       let whereClause = {};
       let schoolWhere = {};
 
+      // 1. Perbaikan Filter Tanggal (WIB +7)
       if (date) {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
+        // Memaksa awal dan akhir hari ke zona waktu Jakarta
+        const startOfDay = new Date(`${date}T00:00:00.000+07:00`);
+        const endOfDay = new Date(`${date}T23:59:59.999+07:00`);
+        
         whereClause.tgl_terima = { [Op.between]: [startOfDay, endOfDay] };
       }
 
+      // 2. Perbaikan Filter Pencarian
       if (q) schoolWhere.nama_sekolah = { [Op.iLike]: `%${q}%` };
-      if (npsn) schoolWhere.npsn = { [Op.iLike]: `%${npsn}%` };
+      
+      // NPSN sebaiknya menggunakan Op.eq (sama dengan) agar lebih presisi dan cepat
+      if (npsn) schoolWhere.npsn = { [Op.eq]: npsn }; 
 
-      // Query hanya dijalankan jika isFiltered = true
+      // 3. Query dengan Logika Relasi yang Lebih Aman
       transactions = await SptjmTransaksi.findAll({
         where: whereClause,
         include: [
           {
             model: AlokasiBantuan,
-            required: true, 
-            include: [{ model: MasterSekolah, where: schoolWhere }],
+            // Jika sedang mencari sekolah (q/npsn), gunakan INNER JOIN (true)
+            // Jika hanya filter tanggal, gunakan LEFT JOIN (false) agar transaksi tetap muncul
+            required: (q || npsn) ? true : false, 
+            include: [{ 
+              model: MasterSekolah, 
+              where: schoolWhere,
+              required: (q || npsn) ? true : false
+            }],
           },
           { model: User, attributes: ["username"] },
         ],
+        // Mengurutkan berdasarkan nomor urut harian terbaru
         order: [["no_urut_harian", "DESC"]],
       });
     }
@@ -268,11 +279,11 @@ static async renderDashboard2(req, res) {
       currentDate: date || '',
       currentSearch: q || '',
       currentNpsn: npsn || '',
-      isFiltered: isFiltered // Kirim status ke frontend
+      isFiltered: isFiltered 
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Error Dashboard2:", error);
     res.status(500).render("error", { message: error.message });
   }
 }
@@ -328,46 +339,72 @@ static async renderDashboard2(req, res) {
 // ! NEW
 static async renderDashboard(req, res) {
   try {
-    const today = new Date().toLocaleDateString('en-CA'); 
-    // Ambil parameter dari query
+    // 1. Ambil tanggal hari ini dalam format YYYY-MM-DD (WIB)
+    const now = new Date();
+    const today = new Date(now.getTime() + (7 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+    // 2. Ambil parameter dari query
     const startDate = req.query.startDate || today;
     const endDate = req.query.endDate || today;
     const q = req.query.q || '';
+    const npsn = req.query.npsn || ''; // Tambahan filter NPSN jika diperlukan
 
     let whereClause = {};
     let schoolWhere = {};
 
-    // Logika Filter Range Tanggal
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
+    // 3. Logika Filter Range Tanggal dengan koreksi Offset WIB (+7)
+    // Kita buat string ISO manual agar Sequelize mengirimkan timestamp yang tepat ke DB
+    const start = new Date(`${startDate}T00:00:00.000+07:00`);
+    const end = new Date(`${endDate}T23:59:59.999+07:00`);
 
     whereClause.tgl_terima = { [Op.between]: [start, end] };
 
+    // 4. Logika Filter Pencarian
     if (q) {
       schoolWhere.nama_sekolah = { [Op.iLike]: `%${q}%` };
     }
+    
+    if (npsn) {
+      schoolWhere.npsn = { [Op.eq]: npsn }; // NPSN biasanya eksak (lebih cepat)
+    }
 
+    // 5. Query ke Database
     const transactions = await SptjmTransaksi.findAll({
       where: whereClause,
-      include: [{
+      include: [
+        {
           model: AlokasiBantuan,
-          required: true,
-          include: [{ model: MasterSekolah, where: schoolWhere }],
-      },{ model: User, attributes: ["username"] }],
-      order: [["no_urut_harian", "DESC"]],
+          // Ubah required ke false jika ingin melihat transaksi yang sekolahnya belum terdaftar
+          // Ubah ke true jika hanya ingin melihat transaksi yang data sekolahnya lengkap
+          required: (q || npsn) ? true : false, 
+          include: [
+            { 
+              model: MasterSekolah, 
+              where: schoolWhere 
+            }
+          ],
+        },
+        { 
+          model: User, 
+          attributes: ["username"] 
+        }
+      ],
+      // Mengurutkan berdasarkan nomor urut harian terbaru
+      order: [["no_urut_harian", "DESC"]], 
     });
 
+    // 6. Render ke EJS
     res.render("dashboard", { 
       data: transactions, 
       user: req.dataUser,
-      startDate: startDate, // Kirim ke EJS
-      endDate: endDate,     // Kirim ke EJS
-      currentSearch: q
+      startDate: startDate, 
+      endDate: endDate,     
+      currentSearch: q,
+      currentNpsn: npsn
     });
 
   } catch (error) {
+    console.error("Error Dashboard:", error);
     res.status(500).render("error", { message: error.message });
   }
 }
