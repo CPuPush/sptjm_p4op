@@ -269,7 +269,9 @@ static async renderDashboard2(req, res) {
           { model: User, attributes: ["username"] },
         ],
         // Mengurutkan berdasarkan nomor urut harian terbaru
-        order: [["no_urut_harian", "DESC"]],
+        order: [
+          ["no_urut_harian", "DESC"]
+        ],
       });
     }
 
@@ -390,7 +392,9 @@ static async renderDashboard(req, res) {
         }
       ],
       // Mengurutkan berdasarkan nomor urut harian terbaru
-      order: [["no_urut_harian", "DESC"]], 
+      order: [
+        ["no_urut_harian", "DESC"]
+      ], 
     });
 
     // 6. Render ke EJS
@@ -847,6 +851,8 @@ static async exportToExcel(req, res) {
             { header: 'No. Surat', key: 'no_surat', width: 25 },
             { header: 'Jumlah Penerima Bantuan', key: 'siswa_awal', width: 25 },
             { header: 'Jumlah Siswa yang diajukan', key: 'siswa', width: 10 },
+            { header: 'tahun', key: 'tahun', width: 5},
+            { header: 'tahap', key: 'tahap', width: 2 },
             { header: 'Total Dana', key: 'total', width: 20 },
             { header: 'Petugas', key: 'petugas', width: 15 },
             { header: 'Status', key: 'status', width: 12 }
@@ -862,6 +868,8 @@ static async exportToExcel(req, res) {
                 tgl: new Date(item.tgl_terima).toLocaleDateString('id-ID'),
                 siswa_awal: item.AlokasiBantuan?.jumlah_penerima,
                 siswa: item.jmlh_siswa,
+                tahun: item.AlokasiBantuan?.tahun,
+                tahap: item.AlokasiBantuan?.tahap,
                 total: item.total ? Number(item.total) : 0, // Gunakan Number() untuk BigInt
                 petugas: item.User?.username,
                 status: item.status_ambil ? 'Selesai' : 'Proses'
