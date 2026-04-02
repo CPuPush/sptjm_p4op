@@ -1,0 +1,136 @@
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Monitoring Realisasi SPTJM</h3>
+            <p class="text-muted small">Memantau progres pendebetan Tahap <%= filter.tahap %> Tahun <%= filter.tahun %></p>
+        </div>
+        
+        <form action="/monitoring" method="GET" class="d-flex gap-2">
+            <select name="tahun" class="form-select form-select-sm shadow-sm" style="width: 130px;">
+                <% listTahun.forEach(t => { %>
+                    <option value="<%= t.tahun %>" <%= filter.tahun == t.tahun ? 'selected' : '' %>>Tahun <%= t.tahun %></option>
+                <% }) %>
+            </select>
+            <select name="tahap" class="form-select form-select-sm shadow-sm" style="width: 130px;">
+                <% listTahap.forEach(t => { %>
+                    <option value="<%= t.tahap %>" <%= filter.tahap == t.tahap ? 'selected' : '' %>>Tahap <%= t.tahap %></option>
+                <% }) %>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm">
+                <i class="bi bi-filter"></i> Terapkan
+            </button>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-primary border-4">
+                <small class="text-muted fw-bold text-uppercase">Total Sekolah</small>
+                <h3 class="fw-bold mb-0 text-primary"><%= stats.totalSekolah %></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-success border-4">
+                <small class="text-muted fw-bold text-uppercase">Sudah Usul</small>
+                <h3 class="fw-bold mb-0 text-success"><%= stats.sudahUsul %></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-warning border-4">
+                <small class="text-muted fw-bold text-uppercase">Belum Usul</small>
+                <h3 class="fw-bold mb-0 text-warning"><%= stats.belumUsul %></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3 border-start border-dark border-4">
+                <small class="text-muted fw-bold text-uppercase">Persentase</small>
+                <h3 class="fw-bold mb-0 text-dark"><%= stats.persenSekolah %>%</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 bg-white">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <span class="small fw-bold">Progres Penyelesaian Tahap <%= filter.tahap %></span>
+                <span class="badge bg-success"><%= stats.persenSekolah %>% Selesai</span>
+            </div>
+            <div class="progress" style="height: 12px; border-radius: 10px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                     role="progressbar" style="width: <%= stats.persenSekolah %>%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-list-stars text-primary me-2"></i>Daftar Progres Sekolah</h6>
+                </div>
+                <div class="col-auto">
+                    <input type="text" id="searchTable" class="form-control form-control-sm" placeholder="Cari sekolah...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tableMonitoring">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Nama Sekolah</th>
+                            <th class="text-center">Kecamatan</th>
+                            <th class="text-center">Target (App A)</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Update</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (data.length > 0) { %>
+                            <% data.forEach(item => { %>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark text-uppercase"><%= item.MasterSekolah?.nama_sekolah %></div>
+                                        <div class="small text-muted">NPSN: <%= item.MasterSekolah?.npsn %></div>
+                                    </td>
+                                    <td class="text-center small text-muted"><%= item.MasterSekolah?.kecamatan %></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border px-3"><%= item.jumlah_penerima %> Siswa</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <% if(item.status_usulan) { %>
+                                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                <i class="bi bi-check-circle-fill me-1"></i> SUDAH USUL
+                                            </span>
+                                        <% } else { %>
+                                            <span class="badge bg-warning-subtle text-warning px-3 py-2">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> BELUM USUL
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center small text-muted">
+                                        <%= item.updatedAt ? new Date(item.updatedAt).toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) : '-' %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="5" class="text-center py-5 text-muted">Data Alokasi belum tersedia untuk periode ini.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search sederhana di sisi client
+    document.getElementById('searchTable').onkeyup = function() {
+        let val = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#tableMonitoring tbody tr');
+        rows.forEach(row => {
+            let text = row.innerText.toLowerCase();
+            row.style.display = text.includes(val) ? '' : 'none';
+        });
+    }
+</script>
