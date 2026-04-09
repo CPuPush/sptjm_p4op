@@ -938,6 +938,7 @@ static async renderMonitoring(req, res) {
             filteredData = allData.filter(s => s.status_usulan === false);
         }
 
+
         res.render("monitoring", {
             data: filteredData, // Kirim data yang sudah difilter ke tabel
             years,
