@@ -1,6 +1,6 @@
-const { User, SptjmTransaksi, AlokasiBantuan, MasterSekolah} = require("../models");
-const { Op } = require("sequelize"); // Dibutuhkan untuk filter range tanggal
-const ExcelJS = require('exceljs'); // Baris ini yang hilang!
+const { User, SptjmTransaksi, AlokasiBantuan, MasterSekolah, Sequelize } = require("../models"); // Tambahkan Sequelize di sini
+const { Op } = require("sequelize"); 
+const ExcelJS = require('exceljs');
 
 class SptjmController {
   // ? Create New Transaction
@@ -899,6 +899,59 @@ static async exportToExcel(req, res) {
     }
 }
 
+// rendering monitoring
+static async renderMonitoring(req, res) {
+    try {
+        const { tahun = '2026', tahap = '1', status = 'all' } = req.query;
+
+        // 1. Ambil Daftar Unik untuk Filter (Tetap sama)
+        const years = await AlokasiBantuan.findAll({
+            attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('tahun')), 'tahun']],
+            order: [['tahun', 'DESC']]
+        });
+        const stages = await AlokasiBantuan.findAll({
+            attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('tahap')), 'tahap']],
+            order: [['tahap', 'ASC']]
+        });
+
+        // 2. Ambil Semua Target Sekolah (Tanpa filter status dulu untuk hitung Stats)
+        const allData = await AlokasiBantuan.findAll({
+            where: { tahun, tahap },
+            include: [
+                { model: MasterSekolah },
+                { model: SptjmTransaksi } 
+            ],
+            order: [[{ model: MasterSekolah }, 'nama_sekolah', 'ASC']]
+        });
+
+        // 3. Kalkulasi Statistik (Berdasarkan SEMUA data di tahap/tahun tersebut)
+        const totalSekolah = allData.length;
+        const sudahUsul = allData.filter(s => s.status_usulan === true).length;
+        const belumUsul = totalSekolah - sudahUsul;
+        const persentase = totalSekolah > 0 ? ((sudahUsul / totalSekolah) * 100).toFixed(1) : 0;
+
+        // 4. Filter Data untuk Tabel (Berdasarkan pilihan status)
+        let filteredData = allData;
+        if (status === 'sudah') {
+            filteredData = allData.filter(s => s.status_usulan === true);
+        } else if (status === 'belum') {
+            filteredData = allData.filter(s => s.status_usulan === false);
+        }
+
+        res.render("monitoring", {
+            data: filteredData, // Kirim data yang sudah difilter ke tabel
+            years,
+            stages,
+            filter: { tahun, tahap, status }, // Kirim status aktif ke view
+            stats: { totalSekolah, sudahUsul, belumUsul, persentase },
+            user: req.dataUser,
+            userById: req.dataUser,
+            currentPage: 'monitoring'
+        });
+    } catch (error) {
+        res.status(500).send("Gagal memuat monitoring: " + error.message);
+    }
+}
 }
 
 module.exports = SptjmController
