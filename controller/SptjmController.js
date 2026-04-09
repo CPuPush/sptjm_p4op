@@ -4,7 +4,7 @@ const ExcelJS = require('exceljs'); // Baris ini yang hilang!
 
 class SptjmController {
   // ? Create New Transaction
-  static async createTransaction(req, res) {
+static async createTransaction(req, res) {
     try {
       const {
         nama,
@@ -15,14 +15,17 @@ class SptjmController {
         spp,
         bulan,
         is_ppdb_bersama,
-        tgl_terima
+        tgl_terima,
+        total // <--- Sekarang ambil langsung dari req.body
       } = req.body;
 
-      // 1. Logika Auto-Calculate Total
-      const total = BigInt(jmlh_siswa) * BigInt(spp) * BigInt(bulan);
+      // 1. Logika Auto-Calculate (DIHAPUS DARI BE, KARENA SUDAH DIKIRIM DARI FE)
+      // Kita hanya pastikan nilainya ada
+      if (!total) {
+          return res.status(400).json({ status: 'error', message: 'Total pendebetan harus diisi' });
+      }
 
-      // 2. Logika Reset No Urut Harian
-      // Kita cari transaksi yang dibuat pada tanggal tgl_terima yang sama
+      // 2. Logika Reset No Urut Harian (Tetap sama)
       const startOfDay = new Date(tgl_terima);
       startOfDay.setHours(0, 0, 0, 0);
       
@@ -43,14 +46,14 @@ class SptjmController {
       const newSptjm = await SptjmTransaksi.create({
         AlokasiBantuanId,
         nama,
-        UserId: res.dataUser.id, // Diambil dari middleware authentication
+        UserId: res.dataUser.id,
         no_urut_harian,
         no_surat,
         no_telp,
         jmlh_siswa,
         spp,
         bulan,
-        total,
+        total: BigInt(total), // <--- Gunakan total dari frontend
         is_ppdb_bersama,
         tgl_terima,
         status_ambil: false
@@ -66,7 +69,7 @@ class SptjmController {
       console.log(error);
       return res.status(500).json({ status: 'error', error });
     }
-  }
+}
 
   // ? search school by npsn
   static async searchSchoolByNpsn(req, res){

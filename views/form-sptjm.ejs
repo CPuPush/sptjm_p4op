@@ -29,7 +29,7 @@
                                 <input type="text" id="displayNamaSekolah" class="form-control bg-light" readonly>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small">Jenjang</label>
+                                <label class="form-label small">Jenjang & Periode</label>
                                 <select id="selectJenjang" class="form-select border-primary" required></select>
                             </div>
                         </div>
@@ -81,9 +81,14 @@
                             <label class="form-check-label" for="is_ppdb_bersama">Berkas PPDB Bersama?</label>
                         </div>
 
-                        <div class="alert alert-info py-2 d-flex justify-content-between align-items-center">
-                            <span class="small fw-bold text-uppercase">Estimasi Total Pendebetan:</span>
-                            <span class="h5 mb-0 fw-bold text-dark" id="previewTotal">Rp 0</span>
+                        <div class="mb-3 p-3 bg-info bg-opacity-10 border border-info rounded">
+                            <label class="form-label small fw-bold text-info text-uppercase">Total Pendebetan (Otomatis & Bisa Diedit)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-info text-white border-info">Rp</span>
+                                <input type="text" id="total_display" class="form-control border-info fw-bold" required placeholder="0">
+                                <input type="hidden" name="total" id="total_input">
+                            </div>
+                            <div class="form-text small">Gunakan titik sebagai pemisah ribuan untuk mempermudah pengecekan berkas.</div>
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
@@ -103,8 +108,48 @@
 <script>
     const btnSearch = document.getElementById('btnSearch');
     const form = document.getElementById('formCreateSptjm');
-    const previewTotal = document.getElementById('previewTotal');
+    const totalDisplay = document.getElementById('total_display');
+    const totalInput = document.getElementById('total_input');
 
+    // FUNGSI 1: FORMAT ANGKA KE TITIK (Contoh: 1000000 -> 1.000.000)
+    const formatRibuan = (angka) => {
+        return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    // FUNGSI 2: BERSIHKAN TITIK (Contoh: 1.000.000 -> 1000000)
+    const bersihkanAngka = (teks) => {
+        return teks.replace(/\./g, "");
+    };
+
+    // FUNGSI 3: HITUNG OTOMATIS
+    const calculateTotal = () => {
+        const s = document.getElementById('jmlh_siswa').value || 0;
+        const p = document.getElementById('spp').value || 0;
+        const b = document.getElementById('bulan').value || 0;
+        
+        const hasil = s * p * b;
+        
+        // Update ke tampilan (dengan titik) dan ke hidden input (angka bersih)
+        totalDisplay.value = formatRibuan(hasil);
+        totalInput.value = hasil;
+    };
+
+    // Event listener untuk perhitungan otomatis
+    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
+        document.getElementById(id).oninput = calculateTotal;
+    });
+
+    // Event listener jika user mengedit total secara manual
+    totalDisplay.oninput = function() {
+        let nilaiBersih = bersihkanAngka(this.value);
+        // Pastikan hanya angka
+        nilaiBersih = nilaiBersih.replace(/[^0-9]/g, "");
+        
+        this.value = formatRibuan(nilaiBersih);
+        totalInput.value = nilaiBersih; // Simpan angka murni ke hidden input
+    };
+
+    // LOGIKA SEARCH NPSN
     btnSearch.onclick = async () => {
         const npsn = document.getElementById('searchNpsn').value;
         const feedback = document.getElementById('searchFeedback');
@@ -115,57 +160,50 @@
             const res = await fetch(`/sptjm/school/${npsn}`); 
             const result = await res.json();
 
-            if (result.status === 'success') {
-const schools = result.data;
-    const school = schools[0];
+            if (result.status === 'success' && result.data.length > 0) {
+                const schools = result.data;
+                const school = schools[0];
+                form.classList.remove('d-none');
+                document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
 
-    form.classList.remove('d-none');
-    document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
+                const selectJenjang = document.getElementById('selectJenjang');
+                selectJenjang.innerHTML = '';
 
-    const selectJenjang = document.getElementById('selectJenjang');
-    selectJenjang.innerHTML = '';
+                schools.forEach(s => {
+                    const sortedAlokasi = s.AlokasiBantuans.sort((a, b) => {
+                        if (b.tahun !== a.tahun) return b.tahun - a.tahun;
+                        return b.tahap - a.tahap;
+                    });
+                    sortedAlokasi.forEach(alokasi => {
+                        const opt = document.createElement('option');
+                        opt.value = alokasi.id;
+                        opt.textContent = `${s.jenjang} (Tahap ${alokasi.tahap} - ${alokasi.tahun})`;
+                        selectJenjang.appendChild(opt);
+                    });
+                });
+                
+                document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
 
-    schools.forEach(s => {
-        // URUTKAN DATA: Tahun Terbesar ke Terkecil, lalu Tahap Terbesar ke Terkecil
-        const sortedAlokasi = s.AlokasiBantuans.sort((a, b) => {
-            if (b.tahun !== a.tahun) {
-                return b.tahun - a.tahun; // Urutkan Tahun Descending (2025 -> 2023)
-            }
-            return b.tahap - a.tahap; // Urutkan Tahap Descending (Tahap 2 -> Tahap 1)
-        });
-
-        sortedAlokasi.forEach(alokasi => {
-            const opt = document.createElement('option');
-            opt.value = alokasi.id;
-            opt.textContent = `${s.jenjang} (Tahap ${alokasi.tahap} - ${alokasi.tahun})`;
-            selectJenjang.appendChild(opt);
-        });
-    });
-    
-    // Set default value ke pilihan pertama (yang sekarang adalah tahun terbaru)
-    document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
-
-                // LOGIKA MEMORY FORM: Prefill nama dan data lainnya
+                // Memory Form
                 const lastTrxRes = await fetch(`/sptjm/last-trx/${school.id}`);
                 const lastTrxData = await lastTrxRes.json();
                 
                 if (lastTrxData.data) {
                     const last = lastTrxData.data;
-                    document.getElementById('nama').value = last.nama || ''; // Auto-fill nama penanggung jawab
+                    document.getElementById('nama').value = last.nama || '';
                     document.getElementById('no_telp').value = last.no_telp || '';
                     document.getElementById('spp').value = last.spp || '';
                     document.getElementById('jmlh_siswa').value = last.jmlh_siswa || '';
                     document.getElementById('no_surat').value = last.no_surat || '';
-                    feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Sekolah ditemukan. Data terakhir otomatis terisi.</span>`;
+                    feedback.innerHTML = `<span class="text-success small"><i class="bi bi-check-circle"></i> Sekolah ditemukan.</span>`;
                     calculateTotal();
                 }
 
             } else {
-                alert("NPSN tidak terdaftar di Master Sekolah.");
+                alert("NPSN tidak terdaftar.");
             }
         } catch (err) {
-            console.error(err);
-            alert("Terjadi kesalahan sistem saat mencari sekolah.");
+            alert("Gagal mencari sekolah.");
         }
     };
 
@@ -173,22 +211,12 @@ const schools = result.data;
         document.getElementById('AlokasiBantuanId').value = e.target.value;
     };
 
-    const calculateTotal = () => {
-        const s = document.getElementById('jmlh_siswa').value || 0;
-        const p = document.getElementById('spp').value || 0;
-        const b = document.getElementById('bulan').value || 0;
-        const total = s * p * b;
-        previewTotal.innerText = `Rp ${total.toLocaleString('id-ID')}`;
-    };
-
-    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
-        document.getElementById(id).oninput = calculateTotal;
-    });
-
+    // SUBMIT FORM
     form.onsubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+        
         data.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
 
         try {
@@ -200,14 +228,13 @@ const schools = result.data;
 
             const result = await res.json();
             if (result.status === 'success') {
-                alert("Berhasil! Transaksi telah disimpan.");
+                alert("Berhasil disimpan!");
                 window.location.href = '/dashboard';
             } else {
-                alert("Gagal menyimpan: " + (result.message || "Terjadi kesalahan"));
+                alert("Gagal: " + result.message);
             }
         } catch (err) {
-            console.error(err);
-            alert("Terjadi kesalahan jaringan.");
+            alert("Kesalahan jaringan.");
         }
     };
 </script>
