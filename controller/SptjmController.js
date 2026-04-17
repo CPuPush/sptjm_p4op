@@ -605,29 +605,34 @@ static async getTransactionById(req, res) {
     return res.status(500).json({ status: 'error', error });
   }
 }
+// Halaman untuk menampilkan form edit
 static async renderEditPage(req, res) {
     try {
         const { id } = req.params;
 
-        // Ambil data transaksi beserta relasi sekolah dan alokasinya
+        // 1. Ambil data transaksi saat ini
         const data = await SptjmTransaksi.findByPk(id, {
-            include: [
-                {
-                    model: AlokasiBantuan,
-                    include: [{ model: MasterSekolah }]
-                }
-            ]
+            include: [{ 
+                model: AlokasiBantuan, 
+                include: [{ model: MasterSekolah }] 
+            }]
         });
 
-        if (!data) {
-            return res.status(404).send("Data SPTJM tidak ditemukan.");
-        }
+        if (!data) return res.status(404).send("Data SPTJM tidak ditemukan.");
 
-        // Render halaman edit dengan membawa data yang ditemukan
+        // 2. Ambil semua pilihan Tahap/Tahun untuk sekolah tersebut
+        // Supaya user bisa pindah tahap jika salah input diawal
+        const masterSekolahId = data.AlokasiBantuan.MasterSekolahId;
+        const availablePeriods = await AlokasiBantuan.findAll({
+            where: { MasterSekolahId: masterSekolahId },
+            order: [['tahun', 'DESC'], ['tahap', 'DESC']]
+        });
+
         res.render("edit-sptjm", {
             data,
-            user: req.dataUser, // Data user untuk sidebar/navbar
-            currentDate: new Date().toLocaleDateString('en-CA'), // Untuk default input date
+            availablePeriods, // Kirim daftar tahap/tahun ke view
+            userById: req.dataUser,
+            currentDate: new Date().toISOString().split('T')[0],
             currentPage: 'dashboard'
         });
     } catch (error) {
@@ -637,58 +642,39 @@ static async renderEditPage(req, res) {
 }
 
   // ? 2. Update Transaction (Edit Data)
-  static async updateTransaction(req, res) {
+ // Proses update transaksi
+static async updateTransaction(req, res) {
     try {
-      const { id } = req.params;
-      const { no_surat, no_telp, jmlh_siswa, spp, bulan, is_ppdb_bersama, tgl_terima } = req.body;
+        const { id } = req.params;
+        const { 
+            no_surat, nama, jmlh_siswa, spp, bulan, 
+            no_telp, is_ppdb_bersama, tgl_terima, 
+            AlokasiBantuanId, total // Ambil total dari frontend
+        } = req.body;
 
-      
-      const transaction = await SptjmTransaksi.findByPk(id);
+        const transaction = await SptjmTransaksi.findByPk(id);
+        if (!transaction) {
+            return res.status(404).json({ status: 'error', message: 'Data tidak ditemukan' });
+        }
 
-      if (!transaction) {
-        return res.status(404).json({ status: 'error', message: 'Data tidak ditemukan' });
-      }
-      
+        await transaction.update({
+            AlokasiBantuanId, // Bisa ganti tahap/tahun
+            no_surat,
+            nama,
+            jmlh_siswa,
+            spp,
+            bulan,
+            no_telp,
+            total: BigInt(total), // Gunakan total manual dari frontend
+            is_ppdb_bersama: is_ppdb_bersama === true || is_ppdb_bersama === 'true',
+            tgl_terima
+        });
 
-      // Hitung ulang total jika ada perubahan pada siswa, spp, atau bulan
-      const updatedTotal = BigInt(jmlh_siswa || transaction.jmlh_siswa) * BigInt(spp || transaction.spp) * BigInt(bulan || transaction.bulan);
-
-      // Di bagian akhir updateTransaction
-      await transaction.update({
-        no_surat,
-        no_telp,
-        jmlh_siswa,
-        spp,
-        bulan,
-        is_ppdb_bersama,
-        tgl_terima,
-        total: updatedTotal
-      });
-
-      // Ubah ke JSON dulu, lalu paksa 'total' jadi String agar tidak error saat dikirim
-      const result = transaction.toJSON();
-      result.total = result.total.toString();
-
-      return res.status(200).json({ 
-        status: 'success', 
-        message: 'Data berhasil diupdate', 
-        data: result 
-      });
-      // await transaction.update({
-      //   no_surat,
-      //   no_telp,
-      //   jmlh_siswa,
-      //   spp,
-      //   bulan,
-      //   is_ppdb_bersama,
-      //   tgl_terima,
-      //   total: updatedTotal
-      // });
-      // return res.status(200).json({ status: 'success', message: 'Data berhasil diupdate', data: transaction });
+        return res.status(200).json({ status: 'success', message: 'Data berhasil diperbarui' });
     } catch (error) {
-      return res.status(500).json({ status: 'error', error });
+        return res.status(500).json({ status: 'error', message: error.message });
     }
-  }
+}
 
   // ? 3. Delete Transaction
   static async deleteTransaction(req, res) {
