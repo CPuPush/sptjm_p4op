@@ -14,9 +14,9 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <label class="form-label small">Ubah Tahap / Tahun (Jika Salah Input):</label>
-                                    <select name="AlokasiBantuanId" class="form-select border-primary shadow-sm" required>
+                                    <select name="AlokasiBantuanId" id="selectAlokasiBantuan" class="form-select border-primary shadow-sm" required>
                                         <% availablePeriods.forEach(p => { %>
-                                            <option value="<%= p.id %>" <%= data.AlokasiBantuanId == p.id ? 'selected' : '' %>>
+                                            <option value="<%= p.id %>" data-tahap="<%= p.tahap %>" <%= data.AlokasiBantuanId == p.id ? 'selected' : '' %>>
                                                 Tahap <%= p.tahap %> - Tahun <%= p.tahun %> (<%= data.AlokasiBantuan?.MasterSekolah?.jenjang %>)
                                             </option>
                                         <% }) %>
@@ -49,22 +49,20 @@
                         <hr class="my-4">
 
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label small fw-bold">Jumlah Siswa</label>
                                 <input type="number" name="jmlh_siswa" id="jmlh_siswa" class="form-control" value="<%= data.jmlh_siswa %>" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label small fw-bold">SPP (Rp)</label>
                                 <input type="number" name="spp" id="spp" class="form-control" value="<%= data.spp %>" required>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Durasi (Bulan)</label>
-                                <select name="bulan" id="bulan" class="form-select">
-                                    <option value="1" <%= data.bulan == 1 ? 'selected' : '' %>>1 Bulan</option>
-                                    <option value="3" <%= data.bulan == 3 ? 'selected' : '' %>>3 Bulan</option>
-                                    <option value="6" <%= data.bulan == 6 ? 'selected' : '' %>>6 Bulan</option>
-                                </select>
-                            </div>
+                            <input type="hidden" name="bulan" id="bulan" value="<%= data.bulan %>">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Pilih Periode Bulan Pendebetan</label>
+                            <div id="container-checkbox-bulan" class="p-3 bg-white border rounded shadow-sm row g-2"></div>
                         </div>
 
                         <div class="form-check form-switch mb-4">
@@ -99,8 +97,18 @@
     const form = document.getElementById('formEditSptjm');
     const totalDisplay = document.getElementById('total_display');
     const totalInput = document.getElementById('total_input');
+    const selectAlokasiBantuan = document.getElementById('selectAlokasiBantuan');
+    const containerBulan = document.getElementById('container-checkbox-bulan');
+    const bulanInputHidden = document.getElementById('bulan');
 
-    // Format Titik Ribuan
+    // Mengambil data string bulan lama dari database (Contoh: "Januari, Februari")
+    const existingPeriodeBulan = "<%= data.periode_bulan %>".split(', ').map(b => b.trim());
+
+    const masterBulan = {
+        '1': ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'],
+        '2': ['Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    };
+
     const formatRibuan = (angka) => {
         return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
@@ -112,36 +120,116 @@
     const calculateTotal = () => {
         const s = document.getElementById('jmlh_siswa').value || 0;
         const p = document.getElementById('spp').value || 0;
-        const b = document.getElementById('bulan').value || 0;
+        const b = bulanInputHidden.value || 0;
         const hasil = s * p * b;
         
         totalDisplay.value = formatRibuan(hasil);
         totalInput.value = hasil;
     };
 
-    // Saat User mengetik manual di input total
+    const hitungOtomatisBulanDanDana = () => {
+        const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
+        bulanInputHidden.value = checkedBoxes.length;
+        calculateTotal();
+    };
+
+    // LOGIKA AUTO-RANGE SELECTION
+    const handleRangeSelection = (currentIndex) => {
+        const checkboxes = document.querySelectorAll('.checkbox-bulan-item');
+        let activeIndices = [];
+        
+        checkboxes.forEach((chk, idx) => {
+            if (chk.checked && idx !== currentIndex) activeIndices.push(idx);
+        });
+
+        if (activeIndices.length > 0) {
+            const firstIndex = Math.min(...activeIndices, currentIndex);
+            const lastIndex = Math.max(...activeIndices, currentIndex);
+
+            checkboxes.forEach((chk, idx) => {
+                chk.checked = (idx >= firstIndex && idx <= lastIndex);
+            });
+        }
+    };
+
+    // LOGIKA RENDER CHECKBOX BULAN DI HALAMAN EDIT
+    const renderCheckboxBulan = (isFirstLoad = false) => {
+        containerBulan.innerHTML = '';
+        const selectedOption = selectAlokasiBantuan.options[selectAlokasiBantuan.selectedIndex];
+        if (!selectedOption) return;
+
+        // Ambil data-tahap dari element option select
+        const tahapAktif = selectedOption.getAttribute('data-tahap');
+
+        masterBulan[tahapAktif].forEach((namaBulan, index) => {
+            // Cek apakah nama bulan ini tercatat di database sebelumnya
+            const isChecked = isFirstLoad && existingPeriodeBulan.includes(namaBulan) ? 'checked' : '';
+
+            const div = document.createElement('div');
+            div.className = 'col-6 col-md-4';
+            div.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input checkbox-bulan-item" type="checkbox" value="${namaBulan}" id="chk_${namaBulan}" data-index="${index}" ${isChecked}>
+                    <label class="form-check-label small fw-medium text-dark" style="cursor:pointer;" for="chk_${namaBulan}">${namaBulan}</label>
+                </div>
+            `;
+            containerBulan.appendChild(div);
+        });
+
+        document.querySelectorAll('.checkbox-bulan-item').forEach(chk => {
+            chk.onclick = function() {
+                const currentIndex = parseInt(this.getAttribute('data-index'));
+                if (this.checked) {
+                    handleRangeSelection(currentIndex);
+                }
+                hitungOtomatisBulanDanDana();
+            };
+        });
+
+        if (!isFirstLoad) {
+            bulanInputHidden.value = 0;
+            calculateTotal();
+        }
+    };
+
     totalDisplay.oninput = function() {
         let nilaiBersih = bersihkanAngka(this.value);
         this.value = formatRibuan(nilaiBersih);
         totalInput.value = nilaiBersih;
     };
 
-    // Jalankan kalkulasi saat halaman dibuka (Prefill)
+    // Jalankan pertama kali saat halaman dibuka
     window.onload = () => {
+        // Render pertama dengan mencentang data lama dari DB
+        renderCheckboxBulan(true);
+
         const totalAwal = "<%= data.total %>";
         totalDisplay.value = formatRibuan(totalAwal);
         totalInput.value = totalAwal;
     };
 
-    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
+    selectAlokasiBantuan.onchange = () => {
+        renderCheckboxBulan(false);
+    };
+
+    ['jmlh_siswa', 'spp'].forEach(id => {
         document.getElementById(id).oninput = calculateTotal;
     });
 
     form.onsubmit = async (e) => {
         e.preventDefault();
+        
+        const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
+        const arrayBulan = Array.from(checkedBoxes).map(chk => chk.value);
+        
+        if (arrayBulan.length === 0) {
+            return alert("Peringatan: Kamu harus memilih minimal 1 bulan pendebetan!");
+        }
+
         const formData = new FormData(form);
         const body = Object.fromEntries(formData.entries());
         body.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
+        body.periode_bulan = arrayBulan.join(', '); // Gabung array jadi string "Juli, Agustus"
 
         try {
             const res = await fetch(`/sptjm/<%= data.id %>`, {

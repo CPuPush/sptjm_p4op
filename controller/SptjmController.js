@@ -553,36 +553,36 @@ static async renderDashboard(req, res) {
   }
 
   // ? update terbaru
-static async updateTransaction(req, res) {
-    try {
-        const { id } = req.params;
-        const { no_surat, nama, jmlh_siswa, spp, bulan, no_telp, is_ppdb_bersama, tgl_terima } = req.body;
+// static async updateTransaction(req, res) {
+//     try {
+//         const { id } = req.params;
+//         const { no_surat, nama, jmlh_siswa, spp, bulan, no_telp, is_ppdb_bersama, tgl_terima } = req.body;
 
-        const transaction = await SptjmTransaksi.findByPk(id);
-        if (!transaction) {
-            return res.status(404).json({ status: 'error', message: 'Data tidak ditemukan' });
-        }
+//         const transaction = await SptjmTransaksi.findByPk(id);
+//         if (!transaction) {
+//             return res.status(404).json({ status: 'error', message: 'Data tidak ditemukan' });
+//         }
 
-        // Hitung ulang total dana
-        const newTotal = Number(jmlh_siswa) * Number(spp) * Number(bulan);
+//         // Hitung ulang total dana
+//         const newTotal = Number(jmlh_siswa) * Number(spp) * Number(bulan);
 
-        await transaction.update({
-            no_surat,
-            nama,
-            jmlh_siswa,
-            spp,
-            bulan,
-            no_telp,
-            total: newTotal,
-            is_ppdb_bersama: is_ppdb_bersama === 'true' || is_ppdb_bersama === true,
-            tgl_terima
-        });
+//         await transaction.update({
+//             no_surat,
+//             nama,
+//             jmlh_siswa,
+//             spp,
+//             bulan,
+//             no_telp,
+//             total: newTotal,
+//             is_ppdb_bersama: is_ppdb_bersama === 'true' || is_ppdb_bersama === true,
+//             tgl_terima
+//         });
 
-        return res.status(200).json({ status: 'success', message: 'Data berhasil diperbarui' });
-    } catch (error) {
-        return res.status(500).json({ status: 'error', message: error.message });
-    }
-}
+//         return res.status(200).json({ status: 'success', message: 'Data berhasil diperbarui' });
+//     } catch (error) {
+//         return res.status(500).json({ status: 'error', message: error.message });
+//     }
+// }
 
   // ? 1. Get Transaction By ID (Detail)
 static async getTransactionById(req, res) {
@@ -651,7 +651,8 @@ static async updateTransaction(req, res) {
         const { 
             no_surat, nama, jmlh_siswa, spp, bulan, 
             no_telp, is_ppdb_bersama, tgl_terima, 
-            AlokasiBantuanId, total // Ambil total dari frontend
+            AlokasiBantuanId, total,
+            periode_bulan // <--- PASTIKAN INI ADA
         } = req.body;
 
         const transaction = await SptjmTransaksi.findByPk(id);
@@ -660,16 +661,17 @@ static async updateTransaction(req, res) {
         }
 
         await transaction.update({
-            AlokasiBantuanId, // Bisa ganti tahap/tahun
+            AlokasiBantuanId, 
             no_surat,
             nama,
             jmlh_siswa,
             spp,
-            bulan,
+            bulan, // <--- Jumlah bulan otomatis terhitung dari frontend centangan
             no_telp,
-            total: BigInt(total), // Gunakan total manual dari frontend
+            total: BigInt(total), 
             is_ppdb_bersama: is_ppdb_bersama === true || is_ppdb_bersama === 'true',
-            tgl_terima
+            tgl_terima,
+            periode_bulan // <--- PASTIKAN INI IKUT TERUPDATE
         });
 
         return res.status(200).json({ status: 'success', message: 'Data berhasil diperbarui' });
