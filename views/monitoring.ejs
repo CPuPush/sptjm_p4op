@@ -5,20 +5,21 @@
             <p class="text-muted small mb-0">Wilayah Jakarta - Periode: Tahap <%= filter.tahap %> <%= filter.tahun %></p>
         </div>
         
+        <!-- Form Filter Dinamis + Tombol Export Excel -->
         <form action="/monitoring" method="GET" class="d-flex gap-2 bg-white p-2 rounded shadow-sm border">
-            <select name="tahun" class="form-select form-select-sm" style="width: 120px;">
+            <select name="tahun" id="filterTahun" class="form-select form-select-sm" style="width: 120px;">
                 <% years.forEach(y => { %>
                     <option value="<%= y.tahun %>" <%= filter.tahun == y.tahun ? 'selected' : '' %>>Tahun <%= y.tahun %></option>
                 <% }) %>
             </select>
 
-            <select name="tahap" class="form-select form-select-sm" style="width: 100px;">
+            <select name="tahap" id="filterTahap" class="form-select form-select-sm" style="width: 100px;">
                 <% stages.forEach(s => { %>
                     <option value="<%= s.tahap %>" <%= filter.tahap == s.tahap ? 'selected' : '' %>>Tahap <%= s.tahap %></option>
                 <% }) %>
             </select>
 
-            <select name="status" class="form-select form-select-sm border-primary" style="width: 160px;">
+            <select name="status" id="filterStatus" class="form-select form-select-sm border-primary" style="width: 160px;">
                 <option value="all" <%= filter.status == 'all' ? 'selected' : '' %>>-- Semua Status --</option>
                 <option value="sudah" <%= filter.status == 'sudah' ? 'selected' : '' %>>✅ Sudah Usul</option>
                 <option value="belum" <%= filter.status == 'belum' ? 'selected' : '' %>>❌ Belum Usul</option>
@@ -27,9 +28,15 @@
             <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm">
                 <i class="bi bi-filter"></i> Filter
             </button>
+
+            <!-- TOMBOL EXCEL -->
+            <button type="button" id="btnExportExcel" class="btn btn-success btn-sm px-3 shadow-sm">
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
         </form>
     </div>
 
+    <!-- STATS CARDS -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card border-0 shadow-sm bg-primary text-white p-3 h-100">
@@ -57,6 +64,7 @@
         </div>
     </div>
 
+    <!-- TABEL MONITORING (KEMBALI KE STRUKTUR LAMA FORI) -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
             <h6 class="mb-0 fw-bold">Daftar Status Sekolah Swasta DKI Jakarta</h6>
@@ -71,7 +79,6 @@
                             <th class="text-center">Target Siswa</th>
                             <th class="text-center">Realisasi Siswa</th>
                             <th class="text-center">Status Usulan</th>
-                            <!-- <th class="text-center">Aksi</th> -->
                         </tr>
                     </thead>
                     <tbody>
@@ -101,22 +108,11 @@
                                             </span>
                                         <% } %>
                                     </td>
-                                    <!-- <td class="text-center">
-                                        <% if(item.status_usulan) { %>
-                                            <a href="/sptjm/<%= item.id %>" class="btn btn-sm btn-outline-primary shadow-sm px-3">
-                                                Lihat Berkas
-                                            </a>
-                                        <% } else { %>
-                                            <button class="btn btn-sm btn-outline-secondary disabled border-0" disabled>
-                                                Belum Ada Data
-                                            </button>
-                                        <% } %>
-                                    </td> -->
                                 </tr>
                             <% }) %>
                         <% } else { %>
                             <tr>
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="4" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bi bi-folder-x fs-1"></i>
                                         <p class="mt-2">Tidak ada data sekolah yang ditemukan untuk filter ini.</p>
@@ -130,3 +126,15 @@
         </div>
     </div>
 </div>
+
+<!-- SCRIPT PENGIRIM FILTER KE EXCEL -->
+<script>
+    document.getElementById('btnExportExcel').onclick = function() {
+        const tahun = document.getElementById('filterTahun').value;
+        const tahap = document.getElementById('filterTahap').value;
+        const status = document.getElementById('filterStatus').value;
+        
+        // Alihkan halaman ke endpoint export dengan membawa parameter filter
+        window.location.href = `/monitoring/export?tahun=${tahun}&tahap=${tahap}&status=${status}`;
+    };
+</script>

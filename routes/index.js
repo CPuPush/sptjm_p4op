@@ -45,4 +45,7 @@ router.get("/login", (req, res) => {
     res.render("login", { hideNavbar: true });
 });
 
+// ! Export Monitoring Realisasi ke Excel
+router.get("/monitoring/export", authentication, SptjmController.exportMonitoringToExcel);
+
 module.exports = router;

@@ -939,6 +939,87 @@ static async renderMonitoring(req, res) {
         res.status(500).send("Gagal memuat monitoring: " + error.message);
     }
 }
+
+static async exportMonitoringToExcel(req, res) {
+    try {
+        // 1. Tangkap parameter filter dari query string
+        const { tahun = '2026', tahap = '1', status = 'all' } = req.query;
+
+        // 2. Ambil data dari database (Logika query disamakan dengan fungsi render)
+        const allData = await AlokasiBantuan.findAll({
+            where: { tahun, tahap },
+            include: [
+                { model: MasterSekolah },
+                { model: SptjmTransaksi }
+            ],
+            order: [[{ model: MasterSekolah }, 'nama_sekolah', 'ASC']]
+        });
+
+        // 3. Jalankan filter status usulan
+        let filteredData = allData;
+        if (status === 'sudah') {
+            filteredData = allData.filter(s => s.status_usulan === true);
+        } else if (status === 'belum') {
+            filteredData = allData.filter(s => s.status_usulan === false);
+        }
+
+        // 4. Inisialisasi Workbook ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Monitoring Realisasi');
+
+        // 5. Definisikan struktur kolom Excel (LENGKAP: Wilayah, Kecamatan, Kelurahan, Zona)
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 6 },
+            { header: 'Nama Sekolah', key: 'nama_sekolah', width: 40 },
+            { header: 'NPSN', key: 'npsn', width: 15 },
+            { header: 'Jenjang', key: 'jenjang', width: 12 },
+            { header: 'Wilayah', key: 'wilayah', width: 20 },
+            { header: 'Kecamatan', key: 'kecamatan', width: 20 },
+            { header: 'Kelurahan', key: 'kelurahan', width: 20 },
+            { header: 'Zona', key: 'zona', width: 15 },
+            { header: 'Target Siswa (App A)', key: 'target', width: 22 },
+            { header: 'Realisasi Siswa', key: 'realisasi', width: 18 },
+            { header: 'Status Usulan', key: 'status_usulan', width: 18 },
+            { header: 'Tahun', key: 'tahun', width: 10 },
+            { header: 'Tahap', key: 'tahap', width: 10 }
+        ];
+
+        // 6. Masukkan data ke baris-baris Excel
+        filteredData.forEach((item, index) => {
+            worksheet.addRow({
+                no: index + 1,
+                nama_sekolah: item.MasterSekolah?.nama_sekolah?.toUpperCase(),
+                npsn: item.MasterSekolah?.npsn,
+                jenjang: item.MasterSekolah?.jenjang,
+                wilayah: item.MasterSekolah?.wilayah || '-',
+                kecamatan: item.MasterSekolah?.kecamatan || '-',
+                kelurahan: item.MasterSekolah?.kelurahan || '-',
+                zona: item.MasterSekolah?.zona || '-',
+                target: item.jumlah_penerima,
+                realisasi: item.SptjmTransaksis && item.SptjmTransaksis.length > 0 ? item.SptjmTransaksis[0].jmlh_siswa : 0,
+                status_usulan: item.status_usulan ? 'SUDAH USUL' : 'BELUM USUL',
+                tahun: item.tahun,
+                tahap: item.tahap
+            });
+        });
+
+        // Bold pada baris Header (Baris pertama)
+        worksheet.getRow(1).font = { bold: true };
+
+        // 7. Pengaturan Response Header untuk Download File
+        const fileName = `MONITORING_SPTJM_THN_${tahun}_THP_${tahap}_STATUS_${status.toUpperCase()}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error("Error Export Monitoring:", error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+}
+
 }
 
 module.exports = SptjmController
