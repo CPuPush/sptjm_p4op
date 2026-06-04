@@ -124,6 +124,9 @@
         '2': ['Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
     };
 
+    // Variabel pembantu untuk melacak klik range
+    let lastCheckedIndex = null;
+
     // FUNGSI 1: FORMAT ANGKA KE TITIK
     const formatRibuan = (angka) => {
         return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -138,7 +141,7 @@
     const calculateTotal = () => {
         const s = document.getElementById('jmlh_siswa').value || 0;
         const p = document.getElementById('spp').value || 0;
-        const b = bulanInputHidden.value || 0; // Baca jlh bulan dari hidden input centangan
+        const b = bulanInputHidden.value || 0; 
         
         const hasil = s * p * b;
         
@@ -149,8 +152,37 @@
     // Logika menghitung kuantitas bulan dan mentrigger hitung dana
     const hitungOtomatisBulanDanDana = () => {
         const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
-        bulanInputHidden.value = checkedBoxes.length; // Set jlh bulan untuk disimpan ke db
-        calculateTotal(); // Jalankan perkalian total uang
+        bulanInputHidden.value = checkedBoxes.length; 
+        calculateTotal(); 
+    };
+
+    // LOGIKA SMART AUTO-RANGE (Klik Bulan Awal & Bulan Akhir)
+    const handleRangeSelection = (currentIndex) => {
+        const checkboxes = document.querySelectorAll('.checkbox-bulan-item');
+        
+        // Cari tahu apakah sudah ada checkbox lain yang tercentang sebelumnya
+        let activeIndices = [];
+        checkboxes.forEach((chk, idx) => {
+            if (chk.checked && idx !== currentIndex) {
+                activeIndices.push(idx);
+            }
+        });
+
+        // Jika sudah ada yang tercentang sebelumnya, kita buat range otomatis
+        if (activeIndices.length > 0) {
+            // Ambil index terendah dan tertinggi yang sedang aktif saat ini
+            const firstIndex = Math.min(...activeIndices, currentIndex);
+            const lastIndex = Math.max(...activeIndices, currentIndex);
+
+            // Centang semua checkbox yang berada di dalam range tersebut
+            checkboxes.forEach((chk, idx) => {
+                if (idx >= firstIndex && idx <= lastIndex) {
+                    chk.checked = true;
+                } else {
+                    chk.checked = false; // Uncheck yang di luar range
+                }
+            });
+        }
     };
 
     // LOGIKA RENDER CHECKBOX DINAMIS BERDASARKAN PILIHAN TAHAP
@@ -160,34 +192,42 @@
         if (!activeOption) return;
 
         const textOption = activeOption.textContent;
-        let tahapAktif = '1'; // Default backup
+        let tahapAktif = '1'; 
 
-        // Deteksi string text opsi option: "Tahap 1" atau "Tahap 2"
         if (textOption.includes('Tahap 2')) {
             tahapAktif = '2';
         } else if (textOption.includes('Tahap 1')) {
             tahapAktif = '1';
         }
 
-        // Render 6 Checkbox jatah bulan tahap tersebut
-        masterBulan[tahapAktif].forEach(namaBulan => {
+        // Render 6 Checkbox
+        masterBulan[tahapAktif].forEach((namaBulan, index) => {
             const div = document.createElement('div');
             div.className = 'col-6 col-md-4';
             div.innerHTML = `
                 <div class="form-check">
-                    <input class="form-check-input checkbox-bulan-item" type="checkbox" value="${namaBulan}" id="chk_${namaBulan}">
-                    <label class="form-check-label small fw-medium text-dark" for="chk_${namaBulan}">${namaBulan}</label>
+                    <input class="form-check-input checkbox-bulan-item" type="checkbox" value="${namaBulan}" id="chk_${namaBulan}" data-index="${index}">
+                    <label class="form-check-label small fw-medium text-dark-control-label" style="cursor:pointer;" for="chk_${namaBulan}">${namaBulan}</label>
                 </div>
             `;
             containerBulan.appendChild(div);
         });
 
-        // Pasang listener di setiap checkbox bulan baru
+        // Pasang listener Smart Range & Hitung Dana
         document.querySelectorAll('.checkbox-bulan-item').forEach(chk => {
-            chk.onchange = hitungOtomatisBulanDanDana;
+            chk.onclick = function() {
+                const currentIndex = parseInt(this.getAttribute('data-index'));
+                
+                // Jika user mencentang (bukan menghilangkan centang)
+                if (this.checked) {
+                    handleRangeSelection(currentIndex);
+                }
+                
+                // Hitung ulang total bulan & uang
+                hitungOtomatisBulanDanDana();
+            };
         });
 
-        // Reset hitungan bulan ke 0 saat ganti jengjang/tahap alokasi
         bulanInputHidden.value = 0;
         calculateTotal();
     };
@@ -240,7 +280,6 @@
                 
                 document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
                 
-                // Triger render checkbox bulan pertama kali
                 renderCheckboxBulan();
 
                 // Memory Form
@@ -268,7 +307,6 @@
 
     selectJenjang.onchange = (e) => {
         document.getElementById('AlokasiBantuanId').value = e.target.value;
-        // Render ulang daftar bulan kalau jengjang/tahap ditukar
         renderCheckboxBulan();
     };
 
@@ -276,7 +314,6 @@
     form.onsubmit = async (e) => {
         e.preventDefault();
         
-        // Kumpulkan bulan yang dicentang
         const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
         const arrayBulan = Array.from(checkedBoxes).map(chk => chk.value);
         
@@ -288,7 +325,6 @@
         const data = Object.fromEntries(formData.entries());
         
         data.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
-        // Gabungkan array menjadi string teks "April, Mei" untuk kolom baru db
         data.periode_bulan = arrayBulan.join(', ');
 
         try {
