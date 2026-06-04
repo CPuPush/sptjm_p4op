@@ -16,7 +16,8 @@ static async createTransaction(req, res) {
         bulan,
         is_ppdb_bersama,
         tgl_terima,
-        total // <--- Sekarang ambil langsung dari req.body
+        total, // <--- Sekarang ambil langsung dari req.body
+        periode_bulan // <--- TAMBAHAN UNTUK NAMA BULAN
       } = req.body;
 
       // 1. Logika Auto-Calculate (DIHAPUS DARI BE, KARENA SUDAH DIKIRIM DARI FE)
@@ -56,7 +57,8 @@ static async createTransaction(req, res) {
         total: BigInt(total), // <--- Gunakan total dari frontend
         is_ppdb_bersama,
         tgl_terima,
-        status_ambil: false
+        status_ambil: false,
+        periode_bulan // <--- TAMBAHAN UNTUK MENYIMPAN TEKS SEPERTI "April, Mei"
       });
 
       return res.status(201).json({

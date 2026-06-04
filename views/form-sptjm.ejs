@@ -62,12 +62,16 @@
                                 <input type="number" name="spp" id="spp" class="form-control" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small">Durasi (Bulan)</label>
-                                <select name="bulan" id="bulan" class="form-select">
-                                    <option value="1">1 Bulan</option>
-                                    <option value="3" selected>3 Bulan</option>
-                                    <option value="6">6 Bulan</option>
-                                </select>
+                                <!-- INPUT HIDDEN UNTUK MENGIRIM DURASI BULAN KE BACKEND -->
+                                <input type="hidden" name="bulan" id="bulan" value="0">
+                            </div>
+                        </div>
+
+                        <!-- SELEKSI BULAN BERDASARKAN TAHAPSecara DINAMIS -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">Pilih Periode Bulan Pendebetan</label>
+                            <div id="container-checkbox-bulan" class="p-3 bg-white border rounded shadow-sm row g-2">
+                                <div class="text-muted small col-12">Silakan cari sekolah dahulu untuk memunculkan nama bulan.</div>
                             </div>
                         </div>
 
@@ -110,43 +114,96 @@
     const form = document.getElementById('formCreateSptjm');
     const totalDisplay = document.getElementById('total_display');
     const totalInput = document.getElementById('total_input');
+    const selectJenjang = document.getElementById('selectJenjang');
+    const containerBulan = document.getElementById('container-checkbox-bulan');
+    const bulanInputHidden = document.getElementById('bulan');
 
-    // FUNGSI 1: FORMAT ANGKA KE TITIK (Contoh: 1000000 -> 1.000.000)
+    // Master Periode Bulan jatah per Tahap
+    const masterBulan = {
+        '1': ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'],
+        '2': ['Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    };
+
+    // FUNGSI 1: FORMAT ANGKA KE TITIK
     const formatRibuan = (angka) => {
         return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
 
-    // FUNGSI 2: BERSIHKAN TITIK (Contoh: 1.000.000 -> 1000000)
+    // FUNGSI 2: BERSIHKAN TITIK
     const bersihkanAngka = (teks) => {
         return teks.replace(/\./g, "");
     };
 
-    // FUNGSI 3: HITUNG OTOMATIS
+    // FUNGSI 3: HITUNG OTOMATIS TOTAL DANA
     const calculateTotal = () => {
         const s = document.getElementById('jmlh_siswa').value || 0;
         const p = document.getElementById('spp').value || 0;
-        const b = document.getElementById('bulan').value || 0;
+        const b = bulanInputHidden.value || 0; // Baca jlh bulan dari hidden input centangan
         
         const hasil = s * p * b;
         
-        // Update ke tampilan (dengan titik) dan ke hidden input (angka bersih)
         totalDisplay.value = formatRibuan(hasil);
         totalInput.value = hasil;
     };
 
-    // Event listener untuk perhitungan otomatis
-    ['jmlh_siswa', 'spp', 'bulan'].forEach(id => {
+    // Logika menghitung kuantitas bulan dan mentrigger hitung dana
+    const hitungOtomatisBulanDanDana = () => {
+        const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
+        bulanInputHidden.value = checkedBoxes.length; // Set jlh bulan untuk disimpan ke db
+        calculateTotal(); // Jalankan perkalian total uang
+    };
+
+    // LOGIKA RENDER CHECKBOX DINAMIS BERDASARKAN PILIHAN TAHAP
+    const renderCheckboxBulan = () => {
+        containerBulan.innerHTML = '';
+        const activeOption = selectJenjang.options[selectJenjang.selectedIndex];
+        if (!activeOption) return;
+
+        const textOption = activeOption.textContent;
+        let tahapAktif = '1'; // Default backup
+
+        // Deteksi string text opsi option: "Tahap 1" atau "Tahap 2"
+        if (textOption.includes('Tahap 2')) {
+            tahapAktif = '2';
+        } else if (textOption.includes('Tahap 1')) {
+            tahapAktif = '1';
+        }
+
+        // Render 6 Checkbox jatah bulan tahap tersebut
+        masterBulan[tahapAktif].forEach(namaBulan => {
+            const div = document.createElement('div');
+            div.className = 'col-6 col-md-4';
+            div.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input checkbox-bulan-item" type="checkbox" value="${namaBulan}" id="chk_${namaBulan}">
+                    <label class="form-check-label small fw-medium text-dark" for="chk_${namaBulan}">${namaBulan}</label>
+                </div>
+            `;
+            containerBulan.appendChild(div);
+        });
+
+        // Pasang listener di setiap checkbox bulan baru
+        document.querySelectorAll('.checkbox-bulan-item').forEach(chk => {
+            chk.onchange = hitungOtomatisBulanDanDana;
+        });
+
+        // Reset hitungan bulan ke 0 saat ganti jengjang/tahap alokasi
+        bulanInputHidden.value = 0;
+        calculateTotal();
+    };
+
+    // Event listener input hitung otomatis
+    ['jmlh_siswa', 'spp'].forEach(id => {
         document.getElementById(id).oninput = calculateTotal;
     });
 
     // Event listener jika user mengedit total secara manual
     totalDisplay.oninput = function() {
         let nilaiBersih = bersihkanAngka(this.value);
-        // Pastikan hanya angka
         nilaiBersih = nilaiBersih.replace(/[^0-9]/g, "");
         
         this.value = formatRibuan(nilaiBersih);
-        totalInput.value = nilaiBersih; // Simpan angka murni ke hidden input
+        totalInput.value = nilaiBersih; 
     };
 
     // LOGIKA SEARCH NPSN
@@ -166,7 +223,6 @@
                 form.classList.remove('d-none');
                 document.getElementById('displayNamaSekolah').value = school.nama_sekolah;
 
-                const selectJenjang = document.getElementById('selectJenjang');
                 selectJenjang.innerHTML = '';
 
                 schools.forEach(s => {
@@ -183,6 +239,9 @@
                 });
                 
                 document.getElementById('AlokasiBantuanId').value = selectJenjang.value;
+                
+                // Triger render checkbox bulan pertama kali
+                renderCheckboxBulan();
 
                 // Memory Form
                 const lastTrxRes = await fetch(`/sptjm/last-trx/${school.id}`);
@@ -207,17 +266,30 @@
         }
     };
 
-    document.getElementById('selectJenjang').onchange = (e) => {
+    selectJenjang.onchange = (e) => {
         document.getElementById('AlokasiBantuanId').value = e.target.value;
+        // Render ulang daftar bulan kalau jengjang/tahap ditukar
+        renderCheckboxBulan();
     };
 
     // SUBMIT FORM
     form.onsubmit = async (e) => {
         e.preventDefault();
+        
+        // Kumpulkan bulan yang dicentang
+        const checkedBoxes = document.querySelectorAll('.checkbox-bulan-item:checked');
+        const arrayBulan = Array.from(checkedBoxes).map(chk => chk.value);
+        
+        if (arrayBulan.length === 0) {
+            return alert("Peringatan: Kamu harus mencentang minimal 1 bulan pendebetan!");
+        }
+
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
         
         data.is_ppdb_bersama = document.getElementById('is_ppdb_bersama').checked;
+        // Gabungkan array menjadi string teks "April, Mei" untuk kolom baru db
+        data.periode_bulan = arrayBulan.join(', ');
 
         try {
             const res = await fetch('/sptjm/create', {

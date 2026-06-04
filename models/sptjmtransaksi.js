@@ -29,8 +29,13 @@ module.exports = (sequelize, DataTypes) => {
     total: DataTypes.BIGINT,
     is_ppdb_bersama: DataTypes.BOOLEAN,
     tgl_terima: DataTypes.DATE,
+    periode_bulan: {
+      type: DataTypes.STRING,
+      defaultValue: '-'
+    },
     status_ambil: DataTypes.BOOLEAN,
-    tgl_ambil_realisasi: DataTypes.DATE
+    tgl_ambil_realisasi: DataTypes.
+    DATE
   }, {
     sequelize,
     modelName: 'SptjmTransaksi',
